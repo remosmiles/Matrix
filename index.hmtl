@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Matrix REMO</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/=%\"'#&_(),.;:?!\\|{}<>[]^~";
+        const fontSize = 18;
+        const columns = canvas.width / fontSize;
+
+        const drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = 1;
+        }
+
+        let showText = false;
+        // Nach 4 Sekunden erscheint der Name
+        setTimeout(() => { showText = true; }, 4000);
+
+        function draw() {
+            // Schwarzer Hintergrund mit leichter Transparenz für den Schweif-Effekt
+            ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = "#0F0"; // Matrix-Grün
+            ctx.font = fontSize + "px arial";
+
+            for (let i = 0; i < drops.length; i++) {
+                const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+
+            if (showText) {
+                ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; // Leichter Schatten hinter dem Text
+                ctx.fillRect(0, canvas.height / 2 - 100, canvas.width, 200);
+                
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = "#0F0";
+                ctx.fillStyle = "#FFF"; // Weiß für den Fokus-Namen
+                ctx.font = "bold 150px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("REMO", canvas.width / 2, canvas.height / 2 + 50);
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        setInterval(draw, 33);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
