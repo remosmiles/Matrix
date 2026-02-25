@@ -3,144 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TERMINAL_REMO_v2.0</title>
+    <title>MATRIX_REMO_FORMATION</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        canvas {
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 1;
-        }
-
-        /* Scanlines Effekt */
-        body::after {
-            content: " ";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 3px 100%;
-            z-index: 5;
-            pointer-events: none;
-        }
-
-        #remo-text {
-            position: relative;
-            z-index: 10;
-            color: #fff;
-            font-family: 'Courier New', monospace;
-            font-size: 15vw;
-            font-weight: 900;
-            text-transform: uppercase;
-            text-shadow: 0 0 10px #0f0, 0 0 20px #0f0, 0 0 40px #0f0;
-            letter-spacing: 0.2em;
-            opacity: 0;
-        }
-
-        .glitch {
-            animation: glitch-anim 4s infinite linear alternate-reverse;
-        }
-
-        @keyframes glitch-anim {
-            0% { transform: translate(0); text-shadow: -2px 0 red, 2px 0 blue; }
-            2% { transform: translate(-2px, 2px); }
-            4% { transform: translate(-2px, -2px); }
-            100% { transform: translate(0); text-shadow: 0 0 20px #0f0; }
-        }
+        body { margin: 0; background: #000; overflow: hidden; font-family: monospace; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
-
     <canvas id="matrix"></canvas>
-    <div id="remo-text" class="glitch">REMO</div>
 
     <script>
         const canvas = document.getElementById('matrix');
         const ctx = canvas.getContext('2d');
-        const textElement = document.getElementById('remo-text');
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        const katakana = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
-        const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        const nums = '0123456789';
-        const alphabet = katakana + latin + nums;
+        const alphabet = "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        const fontSize = 20;
+        const columns = Math.floor(canvas.width / fontSize);
+        const drops = Array(columns).fill(0);
 
-        const fontSize = 16;
-        const columns = canvas.width / fontSize;
-        const rainDrops = Array.from({ length: columns }).fill(1);
+        // Hier speichern wir, welche Pixel zum Namen gehören
+        let namePixels = [];
+        const name = "REMO";
+
+        // Funktion um die "Schablone" für den Namen zu erstellen
+        function createNameTemplate() {
+            ctx.fillStyle = "white";
+            ctx.font = `bold ${Math.floor(canvas.width / 5)}px Arial`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            namePixels = [];
+
+            // Wir prüfen alle 20 Pixel (fontSize), ob dort ein Buchstabe des Namens ist
+            for (let y = 0; y < canvas.height; y += fontSize) {
+                for (let x = 0; x < canvas.width; x += fontSize) {
+                    const index = (y * canvas.width + x) * 4;
+                    if (imageData[index] > 128) { // Wenn der Pixel hell ist (Teil des Namens)
+                        namePixels.push({ x, y, currentLetter: '' });
+                    }
+                }
+            }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        createNameTemplate();
+
+        let startTime = Date.now();
+        const formationDelay = 3000; // Nach 3 Sekunden beginnt die Formation
 
         function draw() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            // Hintergrund leicht abdunkeln für Schweif-Effekt
+            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = '#0F0'; 
-            ctx.font = fontSize + 'px monospace';
+            const elapsed = Date.now() - startTime;
 
-            for (let i = 0; i < rainDrops.length; i++) {
-                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+            // Normaler Matrix-Regen
+            ctx.font = fontSize + "px monospace";
+            for (let i = 0; i < drops.length; i++) {
+                const text = alphabet[Math.floor(Math.random() * alphabet.length)];
                 
-                // Manchmal leuchtende weiße Zeichen an der Spitze
-                if(Math.random() > 0.98) {
-                    ctx.fillStyle = '#fff';
-                } else {
-                    ctx.fillStyle = '#0F0';
-                }
+                // Spitze des Regens ist weiß
+                ctx.fillStyle = "#fff";
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                
+                // Rest ist grün
+                ctx.fillStyle = "#0F0";
+                ctx.fillText(text, i * fontSize, (drops[i] - 1) * fontSize);
 
-                ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
-
-                if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                    rainDrops[i] = 0;
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
                 }
-                rainDrops[i]++;
+                drops[i]++;
+            }
+
+            // Die Formation des Namens REMO
+            if (elapsed > formationDelay) {
+                namePixels.forEach(pixel => {
+                    // Die Buchstaben im Namen flackern wie im Original
+                    if (Math.random() > 0.9) {
+                        pixel.currentLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
+                    }
+                    
+                    // Leuchteffekt für den Namen
+                    ctx.fillStyle = "#fff";
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = "#0F0";
+                    ctx.fillText(pixel.currentLetter, pixel.x, pixel.y);
+                    ctx.shadowBlur = 0;
+                });
             }
         }
 
-        // Hacker-Entschlüsselungs-Effekt für den Namen
-        function scrambleText(finalName) {
-            let iteration = 0;
-            const interval = setInterval(() => {
-                textElement.innerText = finalName
-                    .split("")
-                    .map((letter, index) => {
-                        if (index < iteration) return finalName[index];
-                        return alphabet[Math.floor(Math.random() * 26)];
-                    })
-                    .join("");
-
-                if (iteration >= finalName.length) clearInterval(interval);
-                iteration += 1 / 3;
-            }, 50);
-        }
-
-        // Start-Sequenz
-        setTimeout(() => {
-            textElement.style.opacity = "1";
-            scrambleText("REMO");
-        }, 3000);
-
-        setInterval(draw, 35);
+        setInterval(draw, 50);
 
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            createNameTemplate();
         });
     </script>
 </body>
